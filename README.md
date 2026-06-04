@@ -2,12 +2,46 @@
 
 A fun, self-contained HTML5 Snake game built with vanilla JavaScript, HTML, and Tailwind CSS. Classic arcade fun right in your browser — no install, no dependencies.
 
+**Repo:** [https://github.com/GitHubian1/grok-snake](https://github.com/GitHubian1/grok-snake)
+
 ![Game Screenshot](https://via.placeholder.com/600x400/111827/22c55e?text=Grok+Snake)
 
-## Play Online / Locally
+## Play
 
-1. Open `index.html` in any modern browser (double-click or `open index.html`).
-2. Or serve it: `python -m http.server 8000` (then visit http://localhost:8000)
+### Live (recommended)
+Play directly in your browser at:
+
+**https://githubian1.github.io/grok-snake/**
+
+**To enable GitHub Pages (one-time):**
+1. Go to https://github.com/GitHubian1/grok-snake/settings/pages
+2. Under "Build and deployment" → Source, choose:
+   - **Deploy from a branch**
+   - Branch: `main`
+   - Folder: `/ (root)`
+3. Click **Save**.
+4. Wait ~1 minute, then refresh the URL above. Your game will be live for anyone!
+
+(The `.nojekyll` file in the repo helps ensure the static files are served correctly.)
+
+### Locally (after cloning)
+```bash
+git clone git@github.com:GitHubian1/grok-snake.git
+cd grok-snake
+
+# Just open the game:
+open index.html          # macOS
+# or
+start index.html         # Windows
+# or
+xdg-open index.html      # Linux
+```
+
+For the best experience (no CORS or asset issues), run a local server:
+```bash
+python -m http.server 5173
+# then visit http://localhost:5173
+```
 
 ## How to Play
 
@@ -18,7 +52,7 @@ A fun, self-contained HTML5 Snake game built with vanilla JavaScript, HTML, and 
 - Avoid walls and your own tail!
 - Snake speeds up slightly as you eat more apples
 
-Touch / mobile: Use the on-screen arrow buttons.
+**Touch / mobile:** Use the on-screen arrow buttons (or swipe on the canvas).
 
 ## Features
 
@@ -28,55 +62,32 @@ Touch / mobile: Use the on-screen arrow buttons.
 - Retro pixel-inspired styling with modern dark UI
 - Simple Web Audio sound effects (eat, crash, turn)
 - Fully responsive controls
-- Keyboard + on-screen D-pad
-- Clean single-file implementation
+- Keyboard + on-screen D-pad + swipe support
+- Clean single-file implementation (no build step)
 
 ## Project Structure
 
 ```
 grok-snake/
+├── .nojekyll         # For GitHub Pages (prevents Jekyll processing)
 ├── index.html        # The entire game (HTML + Tailwind CDN + JS) — open this!
 ├── LICENSE
 ├── README.md
-└── init-and-push.sh  # Optional helper (chmod +x then ./ )
+└── init-and-push.sh  # One-time helper (safe to delete after initial push)
 ```
 
-## Quick Start (after clone)
+## Clone (SSH)
 
 ```bash
+git clone git@github.com:GitHubian1/grok-snake.git
 cd grok-snake
-# Just open the game:
-open index.html          # macOS
-# or
-start index.html         # Windows
-# or
-xdg-open index.html      # Linux
-```
-
-Or run a local server for best experience:
-```bash
-python -m http.server 5173
-# then visit http://localhost:5173
 ```
 
 ## Made with Grok Build
 
 This project was created as a new HTML game project under `~/Projects/grok-snake` using Grok Build (no reinventing wheels — pure classic Snake that just works).
 
-## Pushing / Creating the GitHub Repo
-
-If the repo isn't set up yet, run these commands from inside the `grok-snake` folder:
-
-```bash
-git init -b main
-git add .
-git commit -m "Initial commit: Grok Snake - self-contained retro HTML5 game"
-gh repo create grok-snake --public --source=. --remote=origin --push
-```
-
-(Assumes you have the GitHub CLI `gh` installed and authenticated.)
-
-Then update the clone URL in this README if needed.
+Initial push completed using SSH + GitHub CLI.
 
 ## License
 
