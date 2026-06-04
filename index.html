@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grok Snake • Retro Fun</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap');
+    
+    :root {
+      --pixel: 'Press Start 2P', system-ui, -apple-system, sans-serif;
+    }
+    
+    body {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    
+    .pixel-font {
+      font-family: 'Press Start 2P', system-ui, -apple-system, sans-serif;
+      letter-spacing: 1px;
+    }
+
+    #game-canvas {
+      image-rendering: pixelated;
+      border: 8px solid #27272a;
+      box-shadow: 0 0 0 4px #18181b,
+                  0 25px 50px -12px rgb(0 0 0 / 0.4);
+      background: #111113;
+    }
+
+    .retro-panel {
+      background: #18181b;
+      border: 4px solid #27272a;
+      box-shadow: 0 0 0 4px #111113;
+    }
+
+    .score-value {
+      font-family: 'Press Start 2P', system-ui, sans-serif;
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+
+    .game-container {
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .snake-segment {
+      transition: none;
+    }
+
+    .dpad-btn {
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      background: #27272a;
+      border: 3px solid #3f3f46;
+      color: #a1a1aa;
+      user-select: none;
+      transition: all 0.05s ease;
+    }
+    
+    .dpad-btn:active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      transform: scale(0.92);
+      border-color: #52525b;
+    }
+
+    .dpad-center {
+      width: 52px;
+      height: 52px;
+      background: #18181b;
+      border: 3px solid #27272a;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: #52525b;
+    }
+
+    .arcade-text {
+      text-shadow: 3px 3px 0 #111113;
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200 min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-[460px]">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-3 px-1">
+      <div>
+        <div class="flex items-center gap-x-3">
+          <div class="w-9 h-9 bg-emerald-500 flex items-center justify-center rounded-sm">
+            <span class="text-zinc-950 text-3xl leading-none mt-0.5 font-bold pixel-font">S</span>
+          </div>
+          <div>
+            <h1 class="pixel-font text-3xl font-bold tracking-tighter text-white arcade-text">GROK SNAKE</h1>
+            <p class="text-[10px] text-emerald-400/70 -mt-1">CLASSIC ARCADE • 1980</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="text-right">
+        <div class="flex items-center gap-2 justify-end">
+          <div class="px-2.5 py-1 bg-zinc-900 rounded border border-zinc-800 text-xs">
+            <span class="text-emerald-400">HIGH</span>
+          </div>
+          <div id="high-score" class="score-value font-bold text-emerald-400 tabular-nums">00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Panel -->
+    <div class="retro-panel rounded-xl p-4 pb-5">
+      <!-- Stats Bar -->
+      <div class="flex items-center justify-between mb-3 px-1">
+        <div>
+          <div class="stat-label mb-0.5">SCORE</div>
+          <div id="score" class="score-value font-bold text-white tabular-nums">000</div>
+        </div>
+        
+        <div class="text-center">
+          <div class="stat-label mb-0.5">LENGTH</div>
+          <div id="length" class="score-value font-bold text-amber-300 tabular-nums">03</div>
+        </div>
+
+        <div class="text-right">
+          <div class="stat-label mb-0.5">SPEED</div>
+          <div id="speed" class="score-value font-bold text-sky-300 tabular-nums">01</div>
+        </div>
+      </div>
+
+      <!-- Canvas -->
+      <div class="flex justify-center mb-4">
+        <canvas id="game-canvas" width="400" height="400" class="rounded-sm bg-[#0a0a0b] cursor-crosshair"></canvas>
+      </div>
+
+      <!-- Status / Messages -->
+      <div id="status-bar" 
+           class="h-9 flex items-center justify-center text-sm font-medium tracking-widest bg-zinc-900/80 rounded border border-zinc-800 mb-4">
+        <span id="status-text" class="text-zinc-400">PRESS ANY KEY OR TAP START</span>
+      </div>
+
+      <!-- Controls -->
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Primary actions -->
+        <div class="flex gap-2">
+          <button id="start-btn"
+                  class="flex-1 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 transition-colors text-white font-semibold py-2.5 rounded text-sm tracking-widest border border-emerald-500/30">
+            START
+          </button>
+          <button id="pause-btn"
+                  class="flex-1 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-900 transition-colors text-zinc-300 font-semibold py-2.5 rounded text-sm tracking-widest border border-zinc-700 disabled:opacity-40"
+                  disabled>
+            PAUSE
+          </button>
+        </div>
+
+        <!-- Restart -->
+        <button id="restart-btn"
+                class="bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-900 transition-colors text-zinc-300 font-semibold py-2.5 rounded text-sm tracking-widest border border-zinc-700">
+          RESTART (R)
+        </button>
+      </div>
+
+      <!-- D-Pad (mobile friendly) -->
+      <div class="mt-5 flex justify-center">
+        <div class="grid grid-cols-3 gap-1 select-none">
+          <!-- Row 1 -->
+          <div></div>
+          <button id="up-btn" class="dpad-btn rounded-t-md active:scale-95">▲</button>
+          <div></div>
+          
+          <!-- Row 2 -->
+          <button id="left-btn" class="dpad-btn rounded-l-md active:scale-95">◀</button>
+          <div class="dpad-center rounded flex items-center justify-center">
+            <div class="w-2.5 h-2.5 bg-zinc-800 rounded-full"></div>
+          </div>
+          <button id="right-btn" class="dpad-btn rounded-r-md active:scale-95">▶</button>
+          
+          <!-- Row 3 -->
+          <div></div>
+          <button id="down-btn" class="dpad-btn rounded-b-md active:scale-95">▼</button>
+          <div></div>
+        </div>
+      </div>
+
+      <div class="mt-4 text-center">
+        <div class="text-[10px] text-zinc-500 tracking-[1.5px]">ARROWS / WASD • SPACE = PAUSE • R = RESTART</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-3 px-1 flex items-center justify-between text-[10px] text-zinc-500">
+      <div>Self-contained • Open anywhere</div>
+      <div class="flex items-center gap-1">
+        <span class="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+        <span>BUILT WITH GROK BUILD</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tailwind script
+    function initTailwind() {
+      document.documentElement.style.setProperty('--accent', '#10b981');
+    }
+    initTailwind();
+
+    // Game constants
+    const GRID_SIZE = 20;
+    const CELL_SIZE = 20;
+    const INITIAL_SPEED = 180; // ms per tick
+    const SPEED_INCREASE_EVERY = 4; // apples eaten
+
+    // DOM
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d', { alpha: true });
+    const scoreEl = document.getElementById('score');
+    const lengthEl = document.getElementById('length');
+    const speedEl = document.getElementById('speed');
+    const highScoreEl = document.getElementById('high-score');
+    const statusText = document.getElementById('status-text');
+    const startBtn = document.getElementById('start-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const restartBtn = document.getElementById('restart-btn');
+
+    // D-pad
+    const upBtn = document.getElementById('up-btn');
+    const downBtn = document.getElementById('down-btn');
+    const leftBtn = document.getElementById('left-btn');
+    const rightBtn = document.getElementById('right-btn');
+
+    // Game state
+    let snake = [];
+    let dx = 1;
+    let dy = 0;
+    let food = { x: 0, y: 0 };
+    let score = 0;
+    let highScore = 0;
+    let applesEaten = 0;
+    let intervalId = null;
+    let isPaused = false;
+    let isGameOver = false;
+    let isRunning = false;
+    let currentSpeed = INITIAL_SPEED;
+
+    // Audio
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        try {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+          console.log('Web Audio not supported');
+        }
+      }
+      return audioCtx;
+    }
+
+    function playSound(type) {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      try {
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+
+        if (type === 'eat') {
+          oscillator.type = 'square';
+          oscillator.frequency.value = 880;
+          gain.gain.value = 0.18;
+          filter.type = 'lowpass';
+          filter.frequency.value = 1800;
+          
+          const t = ctx.currentTime;
+          oscillator.frequency.setValueAtTime(880, t);
+          oscillator.frequency.linearRampToValueAtTime(1320, t + 0.08);
+          
+          gain.gain.setValueAtTime(0.18, t);
+          gain.gain.linearRampToValueAtTime(0.001, t + 0.18);
+          
+          oscillator.connect(filter);
+          filter.connect(gain);
+          gain.connect(ctx.destination);
+          
+          oscillator.start(t);
+          oscillator.stop(t + 0.22);
+        } 
+        else if (type === 'die') {
+          oscillator.type = 'sawtooth';
+          oscillator.frequency.value = 180;
+          gain.gain.value = 0.25;
+          
+          const t = ctx.currentTime;
+          oscillator.frequency.setValueAtTime(180, t);
+          oscillator.frequency.linearRampToValueAtTime(55, t + 0.6);
+          
+          gain.gain.setValueAtTime(0.28, t);
+          gain.gain.linearRampToValueAtTime(0.0001, t + 0.75);
+          
+          const noise = ctx.createBufferSource();
+          const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.7, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < data.length; i++) {
+            data[i] = Math.random() * 2 - 1;
+          }
+          noise.buffer = buffer;
+          
+          const noiseFilter = ctx.createBiquadFilter();
+          noiseFilter.type = 'lowpass';
+          noiseFilter.frequency.value = 900;
+          
+          const noiseGain = ctx.createGain();
+          noiseGain.gain.value = 0.08;
+          noiseGain.gain.linearRampToValueAtTime(0.0001, t + 0.7);
+          
+          noise.connect(noiseFilter);
+          noiseFilter.connect(noiseGain);
+          noiseGain.connect(ctx.destination);
+          
+          oscillator.connect(gain);
+          gain.connect(ctx.destination);
+          
+          oscillator.start(t);
+          oscillator.stop(t + 0.75);
+          noise.start(t);
+          noise.stop(t + 0.72);
+        } 
+        else if (type === 'turn') {
+          oscillator.type = 'sine';
+          oscillator.frequency.value = 620;
+          gain.gain.value = 0.06;
+          
+          const t = ctx.currentTime;
+          gain.gain.setValueAtTime(0.06, t);
+          gain.gain.linearRampToValueAtTime(0.0001, t + 0.06);
+          
+          oscillator.connect(gain);
+          gain.connect(ctx.destination);
+          oscillator.start(t);
+          oscillator.stop(t + 0.09);
+        }
+      } catch (e) {
+        // fail silently
+      }
+    }
+
+    // Load high score
+    function loadHighScore() {
+      const saved = localStorage.getItem('grokSnakeHighScore');
+      highScore = saved ? parseInt(saved, 10) : 0;
+      highScoreEl.textContent = String(highScore).padStart(2, '0');
+    }
+
+    function saveHighScore(newScore) {
+      if (newScore > highScore) {
+        highScore = newScore;
+        localStorage.setItem('grokSnakeHighScore', highScore);
+        highScoreEl.textContent = String(highScore).padStart(2, '0');
+      }
+    }
+
+    // Initialize / reset game state
+    function initGame() {
+      snake = [
+        { x: 7, y: 10 },
+        { x: 6, y: 10 },
+        { x: 5, y: 10 }
+      ];
+      dx = 1;
+      dy = 0;
+      score = 0;
+      applesEaten = 0;
+      currentSpeed = INITIAL_SPEED;
+      isPaused = false;
+      isGameOver = false;
+      isRunning = false;
+
+      updateUI();
+      placeFood();
+      draw();
+
+      statusText.textContent = 'READY — PRESS START OR ANY KEY';
+      statusText.className = 'text-emerald-400';
+
+      pauseBtn.disabled = true;
+      pauseBtn.textContent = 'PAUSE';
+    }
+
+    function updateUI() {
+      scoreEl.textContent = String(score).padStart(3, '0');
+      lengthEl.textContent = String(snake.length).padStart(2, '0');
+      
+      const speedLevel = Math.min(9, Math.floor(applesEaten / SPEED_INCREASE_EVERY) + 1);
+      speedEl.textContent = String(speedLevel).padStart(2, '0');
+    }
+
+    // Place food in random empty cell
+    function placeFood() {
+      let newFood;
+      do {
+        newFood = {
+          x: Math.floor(Math.random() * GRID_SIZE),
+          y: Math.floor(Math.random() * GRID_SIZE)
+        };
+      } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
+      
+      food = newFood;
+    }
+
+    // Draw everything
+    function draw() {
+      // Clear
+      ctx.fillStyle = '#0a0a0b';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Subtle grid
+      ctx.strokeStyle = '#18181b';
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= GRID_SIZE; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * CELL_SIZE, 0);
+        ctx.lineTo(x * CELL_SIZE, canvas.height);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(0, x * CELL_SIZE);
+        ctx.lineTo(canvas.width, x * CELL_SIZE);
+        ctx.stroke();
+      }
+
+      // Draw snake
+      snake.forEach((segment, index) => {
+        const x = segment.x * CELL_SIZE;
+        const y = segment.y * CELL_SIZE;
+
+        if (index === 0) {
+          // Head
+          ctx.fillStyle = '#4ade80';
+          ctx.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+          
+          // Head highlight
+          ctx.fillStyle = '#86efac';
+          ctx.fillRect(x + 3, y + 3, CELL_SIZE - 8, CELL_SIZE - 8);
+
+          // Eyes (directional)
+          ctx.fillStyle = '#166534';
+          const eyeSize = 4;
+          const eyeOffset = 5;
+          
+          if (dx === 1) { // right
+            ctx.fillRect(x + CELL_SIZE - eyeOffset - eyeSize, y + 6, eyeSize, eyeSize);
+            ctx.fillRect(x + CELL_SIZE - eyeOffset - eyeSize, y + CELL_SIZE - 10, eyeSize, eyeSize);
+          } else if (dx === -1) { // left
+            ctx.fillRect(x + eyeOffset, y + 6, eyeSize, eyeSize);
+            ctx.fillRect(x + eyeOffset, y + CELL_SIZE - 10, eyeSize, eyeSize);
+          } else if (dy === -1) { // up
+            ctx.fillRect(x + 6, y + eyeOffset, eyeSize, eyeSize);
+            ctx.fillRect(x + CELL_SIZE - 10, y + eyeOffset, eyeSize, eyeSize);
+          } else { // down
+            ctx.fillRect(x + 6, y + CELL_SIZE - eyeOffset - eyeSize, eyeSize, eyeSize);
+            ctx.fillRect(x + CELL_SIZE - 10, y + CELL_SIZE - eyeOffset - eyeSize, eyeSize, eyeSize);
+          }
+        } else {
+          // Body
+          const shade = index % 2 === 0 ? '#22c55e' : '#16a34a';
+          ctx.fillStyle = shade;
+          ctx.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+          
+          // subtle inner
+          ctx.fillStyle = '#15803d';
+          ctx.fillRect(x + 4, y + 4, CELL_SIZE - 9, CELL_SIZE - 9);
+        }
+      });
+
+      // Draw food (apple)
+      const fx = food.x * CELL_SIZE + CELL_SIZE / 2;
+      const fy = food.y * CELL_SIZE + CELL_SIZE / 2;
+      
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(fx + 1.5, fy + 2.5, 7, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Apple body
+      ctx.fillStyle = '#f87171';
+      ctx.beginPath();
+      ctx.arc(fx, fy, 7.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Highlight
+      ctx.fillStyle = '#fecaca';
+      ctx.beginPath();
+      ctx.arc(fx - 2.5, fy - 2.5, 2.8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Leaf
+      ctx.fillStyle = '#4ade80';
+      ctx.beginPath();
+      ctx.ellipse(fx + 3, fy - 7, 4, 2.2, Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Stem
+      ctx.strokeStyle = '#166534';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(fx + 1, fy - 6);
+      ctx.quadraticCurveTo(fx + 4, fy - 9, fx + 5, fy - 7);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+    }
+
+    // Collision check
+    function checkCollision(head) {
+      // Wall
+      if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+        return true;
+      }
+      // Self (ignore head)
+      for (let i = 1; i < snake.length; i++) {
+        if (snake[i].x === head.x && snake[i].y === head.y) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Game step (one tick)
+    function gameStep() {
+      if (isPaused || isGameOver || !isRunning) return;
+
+      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+      // Check collision
+      if (checkCollision(head)) {
+        endGame();
+        return;
+      }
+
+      // Move snake
+      snake.unshift(head);
+
+      // Eat food?
+      let ate = false;
+      if (head.x === food.x && head.y === food.y) {
+        ate = true;
+        score += 10;
+        applesEaten++;
+        playSound('eat');
+        
+        // Increase speed every N apples
+        if (applesEaten % SPEED_INCREASE_EVERY === 0) {
+          currentSpeed = Math.max(65, currentSpeed - 14);
+          restartGameLoop();
+        }
+        
+        placeFood();
+        updateUI();
+      } else {
+        snake.pop();
+      }
+
+      draw();
+
+      // Update score display live if ate
+      if (ate) {
+        scoreEl.textContent = String(score).padStart(3, '0');
+        lengthEl.textContent = String(snake.length).padStart(2, '0');
+      }
+    }
+
+    function restartGameLoop() {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      if (isRunning && !isPaused && !isGameOver) {
+        intervalId = setInterval(gameStep, currentSpeed);
+      }
+    }
+
+    function startGame() {
+      if (isRunning && !isGameOver) return;
+
+      if (isGameOver) {
+        initGame();
+      }
+
+      isRunning = true;
+      isPaused = false;
+      isGameOver = false;
+
+      statusText.textContent = 'GO! EAT APPLES';
+      statusText.className = 'text-emerald-400';
+
+      pauseBtn.disabled = false;
+      pauseBtn.textContent = 'PAUSE';
+      startBtn.textContent = 'RUNNING';
+
+      // Start the loop
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(gameStep, currentSpeed);
+
+      // subtle start sound
+      setTimeout(() => playSound('turn'), 60);
+    }
+
+    function togglePause() {
+      if (!isRunning || isGameOver) return;
+
+      isPaused = !isPaused;
+
+      if (isPaused) {
+        clearInterval(intervalId);
+        intervalId = null;
+        statusText.textContent = 'PAUSED — PRESS PAUSE OR SPACE';
+        statusText.className = 'text-amber-400';
+        pauseBtn.textContent = 'RESUME';
+      } else {
+        statusText.textContent = 'GO!';
+        statusText.className = 'text-emerald-400';
+        pauseBtn.textContent = 'PAUSE';
+        intervalId = setInterval(gameStep, currentSpeed);
+      }
+    }
+
+    function endGame() {
+      isGameOver = true;
+      isRunning = false;
+      clearInterval(intervalId);
+      intervalId = null;
+
+      playSound('die');
+
+      saveHighScore(score);
+
+      // Draw final state + overlay
+      draw();
+      
+      // Game over overlay on canvas
+      ctx.fillStyle = 'rgba(9, 9, 11, 0.82)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.fillStyle = '#f4f4f5';
+      ctx.font = 'bold 22px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 18);
+
+      ctx.font = '12px monospace';
+      ctx.fillStyle = '#a1a1aa';
+      ctx.fillText(`SCORE: ${String(score).padStart(3, '0')}`, canvas.width / 2, canvas.height / 2 + 18);
+
+      if (score === highScore && score > 0) {
+        ctx.fillStyle = '#fde047';
+        ctx.fillText('NEW HIGH SCORE!', canvas.width / 2, canvas.height / 2 + 42);
+      }
+
+      statusText.textContent = 'GAME OVER — PRESS R OR RESTART';
+      statusText.className = 'text-red-400';
+
+      pauseBtn.disabled = true;
+      startBtn.textContent = 'START';
+    }
+
+    function changeDirection(newDx, newDy) {
+      if (!isRunning || isPaused || isGameOver) return;
+
+      // Prevent reversing
+      if (newDx === -dx && newDy === -dy) {
+        return;
+      }
+
+      // Only change if different
+      if (newDx !== dx || newDy !== dy) {
+        dx = newDx;
+        dy = newDy;
+        playSound('turn');
+      }
+    }
+
+    // Keyboard controls
+    function setupKeyboard() {
+      document.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Spacebar') {
+          e.preventDefault();
+          if (!isRunning || isGameOver) {
+            startGame();
+          } else {
+            togglePause();
+          }
+          return;
+        }
+
+        if (e.key.toLowerCase() === 'r') {
+          e.preventDefault();
+          initGame();
+          startGame();
+          return;
+        }
+
+        if (!isRunning || isPaused || isGameOver) {
+          // Allow starting with arrow keys too
+          if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'].includes(e.key)) {
+            startGame();
+          }
+          return;
+        }
+
+        switch (e.key) {
+          case 'ArrowUp':
+          case 'w':
+          case 'W':
+            e.preventDefault();
+            changeDirection(0, -1);
+            break;
+          case 'ArrowDown':
+          case 's':
+          case 'S':
+            e.preventDefault();
+            changeDirection(0, 1);
+            break;
+          case 'ArrowLeft':
+          case 'a':
+          case 'A':
+            e.preventDefault();
+            changeDirection(-1, 0);
+            break;
+          case 'ArrowRight':
+          case 'd':
+          case 'D':
+            e.preventDefault();
+            changeDirection(1, 0);
+            break;
+        }
+      });
+
+      // Prevent arrow keys from scrolling the page
+      window.addEventListener('keydown', (e) => {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+          // only prevent when game is active
+          if (isRunning && !isPaused && !isGameOver) {
+            e.preventDefault();
+          }
+        }
+      }, { passive: false });
+    }
+
+    // D-pad + buttons
+    function setupControls() {
+      // Main buttons
+      startBtn.addEventListener('click', () => {
+        if (isGameOver || !isRunning) {
+          startGame();
+        }
+      });
+
+      pauseBtn.addEventListener('click', () => {
+        togglePause();
+      });
+
+      restartBtn.addEventListener('click', () => {
+        initGame();
+        // auto-start after restart for convenience
+        setTimeout(() => {
+          if (!isRunning) startGame();
+        }, 80);
+      });
+
+      // D-pad
+      function bindDpad(button, ndx, ndy) {
+        const handler = (ev) => {
+          ev.preventDefault();
+          if (!isRunning || isPaused || isGameOver) {
+            startGame();
+          }
+          changeDirection(ndx, ndy);
+        };
+        button.addEventListener('click', handler);
+        button.addEventListener('touchstart', handler, { passive: false });
+      }
+
+      bindDpad(upBtn, 0, -1);
+      bindDpad(downBtn, 0, 1);
+      bindDpad(leftBtn, -1, 0);
+      bindDpad(rightBtn, 1, 0);
+
+      // Also allow clicking on the canvas to give focus / start
+      canvas.addEventListener('click', () => {
+        if (!isRunning || isGameOver) {
+          startGame();
+        } else if (isPaused) {
+          togglePause();
+        }
+      });
+
+      // Bonus: swipe support on canvas for fun
+      let touchStartX = 0;
+      let touchStartY = 0;
+      
+      canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        
+        if (!isRunning || isGameOver) {
+          startGame();
+        }
+      }, { passive: true });
+
+      canvas.addEventListener('touchend', (e) => {
+        if (!touchStartX || !touchStartY) return;
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchEndY - touchStartY;
+
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+          if (diffX > 35) changeDirection(1, 0);
+          else if (diffX < -35) changeDirection(-1, 0);
+        } else {
+          if (diffY > 35) changeDirection(0, 1);
+          else if (diffY < -35) changeDirection(0, -1);
+        }
+        touchStartX = 0;
+        touchStartY = 0;
+      }, { passive: true });
+    }
+
+    // Make sure we can focus canvas for keys if needed
+    function setupCanvas() {
+      canvas.setAttribute('tabindex', '0');
+      canvas.addEventListener('focus', () => {
+        if (!isRunning && !isGameOver) {
+          statusText.textContent = 'READY — PRESS START OR ARROWS';
+        }
+      });
+    }
+
+    // Initial boot
+    function boot() {
+      loadHighScore();
+      initGame();
+
+      setupKeyboard();
+      setupControls();
+      setupCanvas();
+
+      // Nice first-draw
+      draw();
+
+      // Easter egg: click high score to reset it (with confirmation text)
+      highScoreEl.addEventListener('click', () => {
+        if (confirm('Reset high score?')) {
+          localStorage.removeItem('grokSnakeHighScore');
+          highScore = 0;
+          highScoreEl.textContent = '00';
+        }
+      });
+      highScoreEl.style.cursor = 'pointer';
+      highScoreEl.title = 'Click to reset high score';
+
+      // Auto focus hint
+      setTimeout(() => {
+        if (!isRunning) {
+          canvas.focus();
+        }
+      }, 1200);
+
+      // Keyboard hint in console for devs
+      console.log('%c[Grok Snake] Ready. Arrow keys / WASD, Space to pause, R to restart. High score lives in localStorage.', 'color:#3f3f46');
+    }
+
+    // Boot the game when page is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      boot();
+    }
+
+    // Expose a tiny debug API (optional, harmless)
+    window.GROK_SNAKE = {
+      getState: () => ({ score, length: snake.length, isRunning, isPaused, isGameOver }),
+      forceWin: () => { score = 999; updateUI(); }
+    };
+  </script>
+</body>
+</html>
