@@ -14,15 +14,38 @@ Play directly in your browser at:
 **https://githubian1.github.io/grok-snake/**
 
 **To enable GitHub Pages (one-time):**
-1. Go to https://github.com/GitHubian1/grok-snake/settings/pages
-2. Under "Build and deployment" → Source, choose:
-   - **Deploy from a branch**
-   - Branch: `main`
-   - Folder: `/ (root)`
-3. Click **Save**.
-4. Wait ~1 minute, then refresh the URL above. Your game will be live for anyone!
 
-(The `.nojekyll` file in the repo helps ensure the static files are served correctly.)
+**Option 1 – "Deploy from a branch" (the one you were on)**
+
+1. Go directly to: https://github.com/GitHubian1/grok-snake/settings/pages
+2. Under **Build and deployment** → **Source**, select **Deploy from a branch**.
+3. A **Branch** dropdown appears below — **click it and explicitly select `main`** (this is the step that usually enables the Save button).
+4. Set **Folder** to `/ (root)`.
+5. The Save button should now turn blue — click it.
+
+**Why the Save button is greyed out:** GitHub only enables Save after you actually pick a branch in the dropdown. Selecting the source type alone is not enough.
+
+**Option 2 – GitHub Actions (more reliable, recommended)**
+
+1. Commit the workflow file first (commands below).
+2. On the same Pages settings page, under **Source** choose **GitHub Actions**.
+3. Save. It will use the workflow we added.
+
+After either option, wait ~1 minute and go to:  
+**https://githubian1.github.io/grok-snake/**
+
+(The `.nojekyll` file helps static sites.)
+
+### Commit everything for Pages (do this now)
+
+```bash
+cd ~/Projects/grok-snake
+git add .
+git commit -m "ci: add GitHub Pages workflow + .nojekyll + README updates"
+git push
+```
+
+Then refresh the Pages settings page and try Option 1 or 2.
 
 ### Locally (after cloning)
 ```bash
