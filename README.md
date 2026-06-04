@@ -9,43 +9,25 @@ A fun, self-contained HTML5 Snake game built with vanilla JavaScript, HTML, and 
 ## Play
 
 ### Live (recommended)
-Play directly in your browser at:
+The game is already published and playable directly in your browser at:
 
 **https://githubian1.github.io/grok-snake/**
 
-**To enable GitHub Pages (one-time):**
+(Just click the link above and enjoy!)
 
-**Option 1 – "Deploy from a branch" (the one you were on)**
+**Why the Save button is greyed out on the settings page:**
 
-1. Go directly to: https://github.com/GitHubian1/grok-snake/settings/pages
-2. Under **Build and deployment** → **Source**, select **Deploy from a branch**.
-3. A **Branch** dropdown appears below — **click it and explicitly select `main`** (this is the step that usually enables the Save button).
-4. Set **Folder** to `/ (root)`.
-5. The Save button should now turn blue — click it.
+GitHub is using **GitHub Actions** to publish the site (via the workflow in `.github/workflows/pages.yml` that we added). 
 
-**Why the Save button is greyed out:** GitHub only enables Save after you actually pick a branch in the dropdown. Selecting the source type alone is not enough.
+When the publishing source is set to GitHub Actions, the old "Deploy from a branch" controls become inactive/greyed out. This is normal and expected.
 
-**Option 2 – GitHub Actions (more reliable, recommended)**
+### How to check the deployment
 
-1. Commit the workflow file first (commands below).
-2. On the same Pages settings page, under **Source** choose **GitHub Actions**.
-3. Save. It will use the workflow we added.
+1. Go to your repo → **Actions** tab.
+2. You should see a workflow run called "Deploy static content to Pages".
+3. Click into the latest run to see that it succeeded.
 
-After either option, wait ~1 minute and go to:  
-**https://githubian1.github.io/grok-snake/**
-
-(The `.nojekyll` file helps static sites.)
-
-### Commit everything for Pages (do this now)
-
-```bash
-cd ~/Projects/grok-snake
-git add .
-git commit -m "ci: add GitHub Pages workflow + .nojekyll + README updates"
-git push
-```
-
-Then refresh the Pages settings page and try Option 1 or 2.
+If you see a successful deployment there, the site is live and will automatically update on future pushes to `main`.
 
 ### Locally (after cloning)
 ```bash
